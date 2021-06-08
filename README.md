@@ -1,2 +1,2 @@
-# pyrasgo-tutorials
-PyRasgo Tutorials
+# pyrasgo
+PyRasgo
