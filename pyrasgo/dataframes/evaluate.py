@@ -7,8 +7,6 @@ from typing import List, Optional
 import webbrowser
 
 from pyrasgo.api.error import APIError
-from pyrasgo.api.create import Create
-from pyrasgo.api.session import Environment
 from pyrasgo.schemas.feature import featureImportanceStats, ColumnProfiles
 from pyrasgo.storage.dataframe.utils import set_df_id, map_pandas_df_type, DataframeDataTypes
 from pyrasgo.utils.monitoring import track_experiment, track_usage
@@ -16,11 +14,14 @@ from pyrasgo.utils.monitoring import track_experiment, track_usage
 class Evaluate():
 
     def __init__(self, experiment_id = None):
+        from pyrasgo.api import Save
+        from pyrasgo.api.session import Environment
+
         self._experiment_id = experiment_id
         self._environment = Environment.from_environment()
-        self.create = Create()
+        self.save = Save()
 
-    @track_usage
+
     def duplicate_rows(self, df: pd.DataFrame, 
                        columns: List[str] = None) -> pd.DataFrame:
         """ 
@@ -46,8 +47,7 @@ class Evaluate():
             df_out = df[df.duplicated()]
         return df_out
 
-    @track_usage
-    @track_experiment
+
     def feature_importance(self, df: pd.DataFrame, 
                            target_column: str,
                            timeseries_index: Optional[str] = None,
@@ -82,11 +82,9 @@ class Evaluate():
         try:
             import shap
             import catboost
-            from sklearn.metrics import mean_squared_error
-            from sklearn.metrics import r2_score
         except ModuleNotFoundError:
             raise APIError('Missing dependencies needed to run this function. '
-                           'Run `pip install pyrasgo[df]` to install shap, catboost and sklearn packages.')
+                           'Run `pip install pyrasgo[df]` to install shap and catboost packages.')
 
         if target_column not in df.columns:
             raise APIError(f'Column {target_column} does not exist in DataFrame')
@@ -101,12 +99,24 @@ class Evaluate():
             progress.update()
 
             # Run profile for df
-            timestamp = str(datetime.datetime.now())
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             self.profile(df, exclude_columns=exclude_columns, return_cli_only=True, timestamp_override=timestamp)
             progress.update()
 
             # Copy df so we can alter it without impacting source data
             fi_df = df.copy(deep=True)
+            progress.update()
+
+            # check distinct values of target variable
+            # if 2, train class
+            # if >2, run regressor
+
+            target_distinct_vals = len(df[target_column].dropna().unique())
+            if target_distinct_vals < 2:
+                raise ValueError(f"The chosen target column ({target_column}) " \
+                            f"has less than two distinct values. Please choose a " \
+                            f"target that can have a regressor or classifier " \
+                            f"trained against it.")
             progress.update()
 
             # Split data into train, test sets
@@ -137,6 +147,10 @@ class Evaluate():
             train_df = train_df.select_dtypes(exclude=['datetime'])
             test_df = test_df.select_dtypes(exclude=['datetime'])
 
+            # Start building output json
+            c_data = {}
+            c_data["targetFeature"] = target_column
+
             # Create x and y df's based off target column
             train_x = train_df.loc[:, train_df.columns != target_column]
             train_y = train_df.loc[:, train_df.columns == target_column]
@@ -156,20 +170,57 @@ class Evaluate():
                 raise APIError(f"Catboost error: {e}: "
                             f"One or more of the fields in your dataframe is a date that cannot be automatically filtered out. "
                             f"You can use the exclude_columns=[''] parameter to exclude these manually and re-run this fuction.")
-            model = catboost.CatBoostRegressor(iterations=300, random_seed=123)
+            
+            # Build model and measure performance
+            if target_distinct_vals > 2:
+                model = catboost.CatBoostRegressor(iterations=300, random_seed=123, custom_metric=['R2','RMSE','MAPE'])
+                try:
+                    target_data_type = DataframeDataTypes[str(train_df[target_column].dtypes).upper()].value
+                except(AttributeError, KeyError):
+                    target_data_type = "string"
+                if target_data_type != 'number':
+                    print(f"Your target column has {target_distinct_vals} distinct values, but is not a numeric type. " \
+                    f"Because there are more than two distinct values, we are running a regressor model on your data to " \
+                    f"determine importance. If this behavior is unintened, please either change the type of your data or " \
+                    f"change your target column.")
+            elif target_distinct_vals == 2:
+                model = catboost.CatBoostClassifier(iterations=300, random_seed=123, custom_metric=['AUC','Logloss','Precision','Recall'])
+
             model.fit(train_dataset, eval_set=test_dataset, use_best_model=True, verbose=False, plot=False)
+            metrics = model.get_best_score()
+            learn_set = metrics.get('learn')
+            validation_set = metrics.get('validation')
+
+            # NOTE: learn stats will not be included in response model, but are here for future use
+            c_data['modelPerformance'] = {}
+            c_data['modelPerformance']['learn'] = {}
+            c_data['modelPerformance']['learn']['RMSE'] = learn_set.get('RMSE')
+            c_data['modelPerformance']['learn']['R2'] = learn_set.get('R2')
+            c_data['modelPerformance']['learn']['MAPE'] = learn_set.get('MAPE')
+            c_data['modelPerformance']['learn']['AUC'] = learn_set.get('AUC')
+            c_data['modelPerformance']['learn']['LogLoss'] = learn_set.get('LogLoss')
+            c_data['modelPerformance']['learn']['Precision'] = learn_set.get('Precision')
+            c_data['modelPerformance']['learn']['Recall'] = learn_set.get('Recall')
+            c_data['modelPerformance']['validation'] = {}
+            c_data['modelPerformance']['validation']['RMSE'] = validation_set.get('RMSE')
+            c_data['modelPerformance']['validation']['R2'] = validation_set.get('R2')
+            c_data['modelPerformance']['validation']['MAPE'] = validation_set.get('MAPE')
+            c_data['modelPerformance']['validation']['AUC'] = validation_set.get('AUC')
+            c_data['modelPerformance']['validation']['Logloss'] = validation_set.get('Logloss')
+            c_data['modelPerformance']['validation']['Precision'] = validation_set.get('Precision')
+            c_data['modelPerformance']['validation']['Recall'] = validation_set.get('Recall')
+            progress.update()
+
+            # Calculate shapley values for feature importance
             explainer = shap.TreeExplainer(model)
             shap_values = explainer.shap_values(train_dataset)
             df_shap = pd.DataFrame(shap_values, columns=train_x.columns)
-            # TODO: Alternative importance Calc for later use
-            #df_comp = pd.DataFrame({'feature_importance': model.get_feature_importance(train_dataset), 
-            #                        'feature_names': train_x.columns
-            #                        }).sort_values(by=['feature_importance'], ascending=False)            
-            progress.update()
 
-            # Start building output json
-            c_data = {}
-            c_data["targetFeature"] = target_column
+            # Calculate alternative feature importance for comparison
+            df_comp = pd.DataFrame({'feature_importance': model.get_feature_importance(train_dataset), 
+                                    'feature_names': train_x.columns
+                                    }).sort_values(by=['feature_importance'], ascending=False)            
+            progress.update()
 
             # Histogram binning of shapley values
             c_data['featureShapleyDistributions'] = {}
@@ -203,39 +254,31 @@ class Evaluate():
             progress.update()
             
             # Mean absolute value by feature
-            c_data['featureImportance'] = df_shap.abs().mean().to_dict()
-            # TODO: Expand featureImportance to include multiple versions:
-            #c_data['featureImportance']['shapley'] = df_shap.abs().mean().to_dict()
+            # NOTE: default importance stats will not be included in response model, but are here for future use
+            c_data['featureImportance'] = {}
+            c_data['featureImportance']['shapley'] = df_shap.abs().mean().to_dict()
             #c_data['featureImportance']['default'] = df_comp.abs().mean().to_dict()
-
-            # Model performance
-            c_data['modelPerformance'] = {}
-            pred = model.predict(test_x)
-            rmse = (np.sqrt(mean_squared_error(test_y, pred)))
-            r2 = r2_score(test_y, pred)
-            c_data['modelPerformance']['RMSE'] = rmse
-            c_data['modelPerformance']['R2'] = r2
-            progress.update()
 
             # Prepare the response
             url = f'{self._environment.app_path}/dataframes/{rasgo_df_id}/importance'
             response = {
                 "targetFeature": target_column,
                 "featureShapleyDistributions": c_data['featureShapleyDistributions'],
-                "featureImportance": c_data['featureImportance'],
-                "modelPerformance": c_data['modelPerformance'],
+                "featureImportance": c_data['featureImportance']['shapley'],
+                "modelPerformance": c_data['modelPerformance']['validation'],
                 "timestamp": timestamp
             }
             json_payload = featureImportanceStats(**response)
-            self.create.column_importance_stats(id = rasgo_df_id, payload = json_payload)
+            self.save.column_importance_stats(id = rasgo_df_id, payload = json_payload)
 
             if not return_cli_only:
                 webbrowser.open(url)
             progress.close()
             print('Importance URL:', url)
+            
         return response
 
-    @track_usage
+
     def missing_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """ 
         Print all columns in a Dataframe with null values
@@ -263,7 +306,7 @@ class Evaluate():
         print("-"*35)
         return df[df.isnull().any(axis=1)]
 
-    @track_usage
+
     def profile(self, df: pd.DataFrame, 
                 exclude_columns: List[str] = None,
                 return_cli_only: bool = False,
@@ -291,7 +334,7 @@ class Evaluate():
         rasgo_df_id = set_df_id(df, self._experiment_id)
 
         # Get timestamp
-        timestamp = timestamp_override or str(datetime.datetime.now())
+        timestamp = timestamp_override or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Copy df so we can alter it without impacting source data
         p_df = df.copy(deep=True)
@@ -416,7 +459,7 @@ class Evaluate():
         url = f'{self._environment.app_path}/dataframes/{rasgo_df_id}/features'
         response['url'] = url
         json_payload = ColumnProfiles(**response)
-        self.create.dataframe_profile(id=rasgo_df_id, payload=json_payload)
+        self.save.dataframe_profile(id=rasgo_df_id, payload=json_payload)
 
         if not return_cli_only:
             # open the feature profiles in a web page
@@ -424,7 +467,7 @@ class Evaluate():
             print('Profile URL:', url)
         return response
 
-    @track_usage
+
     def timeseries_gaps(self, df: pd.DataFrame, 
                         datetime_column: str,
                         partition_columns: List[str] = []) -> pd.DataFrame:
@@ -471,7 +514,7 @@ class Evaluate():
 
         return df_out
 
-    @track_usage
+
     @track_experiment
     def train_test_split(self, df: pd.DataFrame, 
                          training_percentage: float = .8,
@@ -507,7 +550,12 @@ class Evaluate():
             # Timeseries data: Split in date order
             if timeseries_index not in df.columns:
                 raise APIError(f'Column {timeseries_index} does not exist in DataFrame')
-        
+
+            # Validation check for Datetime column
+            if df[timeseries_index].dtype not in [np.datetime64, 'datetime64[ns]']:
+                print(f'The column you passed as timeseries_index is {df[timeseries_index].dtype}, which is not a valid datetime type. '
+                      f'This may results in incorrectly building the test set for your model.')
+
             # order the frame by date
             df.sort_values(by=[timeseries_index], inplace=True)
 
@@ -519,7 +567,7 @@ class Evaluate():
             test_df = df.tail(test_ct)
         return train_df, test_df
 
-    @track_usage
+
     def type_mismatches(self, df: pd.DataFrame, 
                         column: str, 
                         data_type: str) -> pd.DataFrame:
@@ -551,6 +599,7 @@ class Evaluate():
         print(f"{(total - cant_convert) / total}%: {cant_convert} rows of {total} rows cannot convert.")
         new_df.rename(columns = {column:f'{column}CastTo{data_type.title()}'}, inplace = True)
         return new_df
+
 
     @classmethod
     def _evaluate_df(cls, df: pd.DataFrame, func_name: str, extra_args: dict):
