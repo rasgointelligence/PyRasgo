@@ -3,17 +3,17 @@ from typing import List, Optional
 import inspect
 
 from pyrasgo.api.error import APIError
-from pyrasgo.storage.dataframe.evaluate import Evaluate
 from pyrasgo.utils.monitoring import track_experiment, track_usage
 
 class Prune():
 
     def __init__(self, experiment_id = None):
+        from pyrasgo.storage import Evaluate
+        
         self._experiment_id = experiment_id
         self.evaluate = Evaluate(experiment_id=experiment_id)
 
-    @track_usage
-    @track_experiment
+
     def columns_with_missing_data(self, df: pd.DataFrame, 
                                   columns: List[str] = None, 
                                   threshold: float = 0) -> pd.DataFrame:
@@ -48,8 +48,7 @@ class Prune():
                     print(f'Column deleted: {column}')
         return df_out
 
-    @track_usage
-    @track_experiment
+
     def duplicate_rows(self, df: pd.DataFrame, 
                        columns: List[str] = None
                        ) -> pd.DataFrame:
@@ -80,8 +79,7 @@ class Prune():
         df_out = pd.DataFrame(df_out.drop(drop_us, 0))
         return df_out
 
-    @track_usage
-    @track_experiment
+
     def features(self, df: pd.DataFrame, 
                  target_column: str, 
                  timeseries_index: str = None,
@@ -139,7 +137,7 @@ class Prune():
         fi_df.sort_values(by='Importance', ascending=False, inplace=True)
         
         if method == 'TOPN':
-            row_threshold = top_n+1
+            row_threshold = top_n-1
             low_importance_features = fi_df.iloc[row_threshold:]['Feature']
             print(f'Dropped features not in top {top_n}:', low_importance_features.to_list())
         if method == 'TOPPCT':
@@ -155,8 +153,7 @@ class Prune():
         p_df = p_df.drop(columns=low_importance_features)
         return p_df
 
-    @track_usage
-    @track_experiment
+
     def rows_with_missing_data(self, df: pd.DataFrame, 
                                columns: List[str] = None
                                ) -> pd.DataFrame:
