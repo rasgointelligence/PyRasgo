@@ -13,3 +13,17 @@ PyRasgo helps users build features faster, collaborate with team members, and se
 
 # Tutorial
 <a href="https://github.com/rasgointelligence/PyRasgo/blob/main/tutorials/PyRasgo%20Tutorial.ipynb">Click Here</a> to try PyRasgo yourself on your own dataframe.
+
+# Quick Start
+```
+    pip install pyrasgo[df]
+    
+    #register for and retrieve your rasgo api key
+    pyrasgo.register(email="fred@flinstone.com", password="")
+    rasgo = pyrasgo.login(email="fred@flinstone.com", password="")
+    
+    #activate an experiment and begin evaluating your features
+    rasgo.activate_experiment('my_first_experiment')
+    rasgo.evaluate.feature_importance(df, target_column='Name_of_target_column_in_df')
+
+```
