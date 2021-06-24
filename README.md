@@ -20,8 +20,11 @@ PyRasgo is a free python package that helps data scientists accelerate feature e
 # Tutorial
 <a href="https://github.com/rasgointelligence/PyRasgo/blob/main/tutorials/PyRasgo%20Tutorial.ipynb">Click Here</a> to try PyRasgo yourself on your own dataframe.
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rasgointelligence/PyRasgo/blob/main/tutorials/PyRasgo%20Tutorial.ipynb) [![Render in nbviewer](https://github.com/jupyter/design/blob/master/logos/Badges/nbviewer_badge.svg)](https://nbviewer.jupyter.org/github/rasgointelligence/PyRasgo/blob/main/tutorials/PyRasgo%20Tutorial.ipynb)
+
+
 # Quick Start
-```
+```python
     pip install pyrasgo[df]
     
     #register for and retrieve your rasgo api key
@@ -33,6 +36,8 @@ PyRasgo is a free python package that helps data scientists accelerate feature e
     rasgo.evaluate.feature_importance(df, target_column='Name_of_target_column_in_df')
 
 ```
+[Read the Docs →](https://docs.rasgoml.com/rasgo-docs/pyrasgo/pyrasgo-getting-started)
+
 
 # About Us
 PyRasgo is maintained by <a href="https://rasgoml.com" target="_blank">Rasgo</a>. Rasgo's enterprise feature store integrates with your data warehouse to help users build features faster, collaborate with team members, and serve features to models in production.
