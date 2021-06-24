@@ -9,13 +9,15 @@
 [![Chat on Discourse](https://img.shields.io/discourse/status?server=https%3A%2F%2Fforum.rasgoml.com)](https://forum.rasgoml.com/)
 
 # PyRasgo
+<img width="50%" align="right" src="https://gblobscdn.gitbook.com/assets%2F-MJDKltt3A57jhixTfmu%2F-McvySUIV02zk3nYTaxH%2F-McvzRZyO-8yGzpI4022%2FScreen%20Shot%202021-06-23%20at%2011.01.51%20PM.png?alt=media&token=1d5c4aac-4436-434b-8aa5-977372cb27e2">
+
 PyRasgo is a free python package that helps data scientists accelerate feature engineering. PyRasgo is built on pandas and works within your notebook or IDE to abstract feature engineering steps, so you can focus on building great features. PyRasgo methods will help you:
 
 - profile your features
 - evaluate feature importance with Shapley values
 - visualize feature and target variable relationships
-- track each iteration of features as you improve your model
-
+- **track each iteration of features as you improve your model**
+  
 
 # Tutorial
 The **[PyRasgo Tutorial](tutorials/PyRasgo%20Tutorial.ipynb)** is a great way to get started. Try it on your own dataframe!
