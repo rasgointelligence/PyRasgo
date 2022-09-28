@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - Sep 16, 2022
+### Add
+- Added Google drive to BiqQuery scope (only applies to customers hosting on Google BigQuery)
+### Change
+- All transform chains now build CTEs instead of views until they are published. Publishing a dataset will create a view or table from the CTE.
+- Changed pydantic schemas to make more fields optional
+### Remove
+- Removed deprecated accelerator functions
+- Removed `render_only` param from `Dataset.transform()` function. No replacement
+
 ## [2.0.2] - Sep 8, 2022
 ### Fix
 - Fixed `get.dataset()` function to raise the correct error if a dataset is not found
@@ -517,6 +527,8 @@ All notable changes to this project will be documented in this file.
    - upgrade pyarrow dependency to 3.0
 
 
+[2.1.0]: https://pypi.org/project/pyrasgo/2.1.0/
+[2.0.2]: https://pypi.org/project/pyrasgo/2.0.2/
 [2.0.1]: https://pypi.org/project/pyrasgo/2.0.1/
 [2.0.0]: https://pypi.org/project/pyrasgo/2.0.0/
 [1.11.0]: https://pypi.org/project/pyrasgo/1.11.0/
