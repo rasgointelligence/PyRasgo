@@ -1,6 +1,18 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.2.1] - Nov 1, 2022
+### Change
+- Fix for  `Transform.to_yaml()` function
+
+## [2.2.0] - Nov 1, 2022
+### Add
+- Added `.to_yaml()` function to Transform class to return a Yaml representation of a Transform
+### Change
+- Changed `create.transform` and `update.transform` to send and receive new API contracts
+- Changed minimum version for install to python 3.7
+- Changed requests to API will include package version
+
 ## [2.1.0] - Sep 16, 2022
 ### Add
 - Added Google drive to BiqQuery scope (only applies to customers hosting on Google BigQuery)
@@ -527,6 +539,7 @@ All notable changes to this project will be documented in this file.
    - upgrade pyarrow dependency to 3.0
 
 
+[2.2.0]: https://pypi.org/project/pyrasgo/2.2.0/
 [2.1.0]: https://pypi.org/project/pyrasgo/2.1.0/
 [2.0.2]: https://pypi.org/project/pyrasgo/2.0.2/
 [2.0.1]: https://pypi.org/project/pyrasgo/2.0.1/
