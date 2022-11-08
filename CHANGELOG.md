@@ -1,9 +1,20 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [2.2.1] - Nov 1, 2022
+## [2.3.0] - Nov 4, 2022
+### Add
+- Added `operation_type` field to operations
 ### Change
-- Fix for  `Transform.to_yaml()` function
+- Changed Dataset repr to include `fqtn`
+### Fix
+- Fixed a logic gap in the `publish.df` function that would allow users to mismatch `resource_key` and `fqtn`
+- Fixed a bug that prevented BigQuery tables with dashes ("a-b") in the fqtn from previewing data
+### Remove
+- Removed "ingights" from Datasets (deprecated with no replacement)
+
+## [2.2.1] - Nov 1, 2022
+### Fix
+- Fixed `Transform.to_yaml()` function
 
 ## [2.2.0] - Nov 1, 2022
 ### Add
@@ -539,6 +550,8 @@ All notable changes to this project will be documented in this file.
    - upgrade pyarrow dependency to 3.0
 
 
+[2.3.0]: https://pypi.org/project/pyrasgo/2.3.0/
+[2.2.1]: https://pypi.org/project/pyrasgo/2.2.1/
 [2.2.0]: https://pypi.org/project/pyrasgo/2.2.0/
 [2.1.0]: https://pypi.org/project/pyrasgo/2.1.0/
 [2.0.2]: https://pypi.org/project/pyrasgo/2.0.2/
