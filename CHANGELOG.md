@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.3.1] - Nov 9, 2022
+### Add
+- Added `tags` and `category` fields to Datasets
+- Added `tags` param to `update.dataset()` function
+
 ## [2.3.0] - Nov 4, 2022
 ### Add
 - Added `operation_type` field to operations
@@ -550,6 +555,7 @@ All notable changes to this project will be documented in this file.
    - upgrade pyarrow dependency to 3.0
 
 
+[2.3.1]: https://pypi.org/project/pyrasgo/2.3.1/
 [2.3.0]: https://pypi.org/project/pyrasgo/2.3.0/
 [2.2.1]: https://pypi.org/project/pyrasgo/2.2.1/
 [2.2.0]: https://pypi.org/project/pyrasgo/2.2.0/
