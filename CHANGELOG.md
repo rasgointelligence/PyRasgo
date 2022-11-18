@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.4.0] - Nov 18, 2022
+### Add
+- Added `tags` and `owner` params to `publish.dataset()` and `update.dataset()` functions
+- Added `save_existing_query` param to `publish.dataset()` function. When re-publishing a Dataset, pass *False* to delete the old query that is being replaced. Pass *True* or nothing (defaults to *True*) to keep it as a standalone query.
+
+## [2.3.2] - Nov 15, 2022
+### Change
+- Changed `update.dataset()` function to restrict updates on datasets sourced from DBT
+- Changed `publish.dataset()` function to restrict republishing datasets sourced from DBT
+
 ## [2.3.1] - Nov 9, 2022
 ### Add
 - Added `tags` and `category` fields to Datasets
@@ -555,6 +565,8 @@ All notable changes to this project will be documented in this file.
    - upgrade pyarrow dependency to 3.0
 
 
+[2.4.0]: https://pypi.org/project/pyrasgo/2.4.0/
+[2.3.2]: https://pypi.org/project/pyrasgo/2.3.2/
 [2.3.1]: https://pypi.org/project/pyrasgo/2.3.1/
 [2.3.0]: https://pypi.org/project/pyrasgo/2.3.0/
 [2.2.1]: https://pypi.org/project/pyrasgo/2.2.1/
