@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.5.0] - Dec 12, 2022
+### Add
+- Added `verified`, `verified_user`, and `verified_timestamp` attributes to Datasets. 
+- Add `verified` paramter to update functions for Dataset and Transform to set the verification status of each
+
 ## [2.4.0] - Nov 18, 2022
 ### Add
 - Added `tags` and `owner` params to `publish.dataset()` and `update.dataset()` functions
@@ -564,7 +569,7 @@ All notable changes to this project will be documented in this file.
    - upgrade Snowflake python connector dependency to 2.4.0
    - upgrade pyarrow dependency to 3.0
 
-
+[2.5.0]: https://pypi.org/project/pyrasgo/2.5.0/
 [2.4.0]: https://pypi.org/project/pyrasgo/2.4.0/
 [2.3.2]: https://pypi.org/project/pyrasgo/2.3.2/
 [2.3.1]: https://pypi.org/project/pyrasgo/2.3.1/
